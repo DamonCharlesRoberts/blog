@@ -1,5 +1,5 @@
 ---
-title: "Bayesian Paired Compariesons for power ranking MLB teams (2019-2024)"
+title: "Bayesian Paired Comparisons for power ranking MLB teams (2019-2024)"
 date: 02/22/2025
 categories:
     - baseball
