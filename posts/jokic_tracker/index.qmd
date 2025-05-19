@@ -5,6 +5,8 @@ code-line-numbers: true
 date: 10/27/2023
 categories:
   - basketball
+execute:
+    echo: false
 ---
 
 ::: {.callout-note style='minimal'}
