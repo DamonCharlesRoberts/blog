@@ -14,15 +14,15 @@ jobs:
         uses: actions/checkout@v4 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      - name: Install jupyter
-        run: pip install jupyter
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
+#      - name: Install Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.11'
+#          cache: 'pip'
+#      - name: Install jupyter
+#        run: pip install jupyter
+#      - name: Install Python dependencies
+#        run: pip install -r requirements.txt
       - name: Update linux packages
         run: sudo apt-get update
       - name: Install cURL Headers
