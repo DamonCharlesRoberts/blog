@@ -9,8 +9,6 @@ $theme: "custom" !default;
 $white:    #fff !default;
 $gray:     #44475A !default;
 $black:    #000 !default;
-$purple:   #BD93F9 !default;
-
 
 // Body
 
@@ -22,10 +20,10 @@ $body-color:                $black !default;
 
 $primary:       $white !default;
 $secondary:     body-mix(85%) !default;
-$success:       $purple !default;
-$info:          $purple !default;
-$warning:       $purple !default;
-$danger:        $purple !default;
+$success:       $black !default;
+$info:          $black !default;
+$warning:       $black !default;
+$danger:        $black !default;
 // This is inconsistent with Bootstrap semantics. That is, $dark
 // should actually be a light color in a dark mode setting, :shrug:
 // https://github.com/thomaspark/bootswatch/issues/989
@@ -36,7 +34,7 @@ $min-contrast-ratio:   1.9 !default;
 
 // Links
 
-$link-color:                $purple !default;
+$link-color:                $black !default;
 
 // Fonts
 
@@ -73,7 +71,7 @@ $dropdown-bg:                       $body-bg !default;
 $dropdown-border-color:             body-mix(85%) !default;
 $dropdown-divider-bg:               body-mix(85%) !default;
 $dropdown-link-color:               $body-color !default;
-$dropdown-link-hover-color:         $purple !default;
+$dropdown-link-hover-color:         $black !default;
 $dropdown-link-hover-bg:            $gray !default;
 
 // Navs
@@ -162,11 +160,11 @@ $btn-code-copy-color:               $white;
 
 // Callout
 
-$callout-color-note:      $white;
-$callout-color-tip:       $white;
-$callout-color-caution:   $white;
-$callout-color-warning:   $white;
-$callout-color-important: $white;
+$callout-color-note:      $black;
+$callout-color-tip:       $black;
+$callout-color-caution:   $black;
+$callout-color-warning:   $black;
+$callout-color-important: $black;
 
 // Contact Buttons
 a.button1 {
@@ -183,7 +181,7 @@ a.button1 {
 }
 
 a.button1:hover {
-  color: $purple;
+  color: $black;
   background-color: $gray;
 }
 
@@ -198,7 +196,7 @@ $web-font-path: "https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 // Typography

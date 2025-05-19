@@ -9,7 +9,6 @@ $theme: "custom" !default;
 $white:    #fff !default;
 $gray:     #44475A !default;
 $black:    #000 !default;
-$purple:   #BD93F9 !default;
 
 // Body
 
@@ -21,10 +20,10 @@ $body-color:                $white !default;
 
 $primary:       $black !default;
 $secondary:     body-mix(85%) !default;
-$success:       $purple !default;
-$info:          $purple !default;
-$warning:       $purple !default;
-$danger:        $purple !default;
+$success:       $white !default;
+$info:          $white !default;
+$warning:       $white !default;
+$danger:        $white !default;
 // This is inconsistent with Bootstrap semantics. That is, $dark
 // should actually be a light color in a dark mode setting, :shrug:
 // https://github.com/thomaspark/bootswatch/issues/989
@@ -35,7 +34,7 @@ $min-contrast-ratio:   1.9 !default;
 
 // Links
 
-$link-color:                $purple !default;
+$link-color:                $white !default;
 
 // Fonts
 
@@ -72,7 +71,7 @@ $dropdown-bg:                       $body-bg !default;
 $dropdown-border-color:             body-mix(85%) !default;
 $dropdown-divider-bg:               body-mix(85%) !default;
 $dropdown-link-color:               $body-color !default;
-$dropdown-link-hover-color:         $purple !default;
+$dropdown-link-hover-color:         $white !default;
 $dropdown-link-hover-bg:            $gray !default;
 
 // Navs
@@ -97,7 +96,7 @@ $pagination-bg:                     $gray !default;
 $pagination-border-width:           0 !default;
 $pagination-border-color:           transparent !default;
 $pagination-hover-color:            $body-color !default;
-$pagination-hover-bg:               $purple !default;
+$pagination-hover-bg:               $white !default;
 $pagination-hover-border-color:     transparent !default;
 $pagination-active-bg:              $pagination-hover-bg !default;
 $pagination-active-border-color:    transparent !default;
@@ -183,7 +182,7 @@ a.button1 {
 
 a.button1:hover {
   color: $gray;
-  background-color: $purple;
+  background-color: $white;
 }
 
 /*-- scss:rules --*/
@@ -197,7 +196,7 @@ $web-font-path: "https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 // Typography
