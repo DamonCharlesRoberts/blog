@@ -1,6 +1,6 @@
 ---
 title: "Advent of Code 2024"
-date: today
+date: 12/06/2024
 categories:
     - code
 draft: false

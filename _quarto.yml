@@ -2,16 +2,16 @@ project:
   type: website
 
 website:
-  title: "Damon's Blog"
+  title: "Public opinion and baseball"
   navbar:
     right:
       - text: "About"
-        href: https://damoncroberts.com
+        href: https://damoncroberts.io
       - icon: github
         href: https://github.com/damoncharlesroberts
   page-footer:
     center: |
-      <span class="faux-block">{{< fa brands creative-commons >}} 2021-2023 Damon Charles Roberts</span>
+      <span class="faux-block">{{< fa brands creative-commons >}} 2021-2025 Damon Charles Roberts</span>
       <span class="faux-block"><br>All content licensed under {{< fa brands creative-commons >}} {{< fa brands creative-commons-by >}} {{< fa brands creative-commons-sa >}} [Creative Commons CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)</span>
 
 format:
@@ -22,3 +22,4 @@ format:
     code-copy: true
     code-overflow: wrap
     smooth-scroll: true
+    code-fold: true
