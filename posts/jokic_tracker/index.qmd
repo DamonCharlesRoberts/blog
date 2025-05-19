@@ -2,8 +2,6 @@
 title: "Nikola Jokić Triple-Double tracker: 2023-2024 season"
 code-tools: true
 code-line-numbers: true
-execute:
-  echo: false
 date: 10/27/2023
 categories:
   - basketball
