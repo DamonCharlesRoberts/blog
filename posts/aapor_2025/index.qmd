@@ -1,0 +1,118 @@
+---
+title: "AAPOR 2025"
+date: today
+categories:
+    - public opinion
+draft: true
+---
+
+AAPOR is the American Association of Public Opinion Research and is an organization
+full of election pollsters, federal statisticians and academics who care about the
+field of how we can best gather and summarize how the public feels. It is an
+important organization full of people who care about giving voice to 
+the people. This group of passionate people meet every year to share what they
+have been doing to try to get better at how to do this as an industry. This exercise
+has become even more important in the last decade or so given some of the very public
+misses that members of this community have made about forecasting. I take some issue
+with the whole of the public opinion industry falling on the sword for this because
+I believe there is a distinction that needs to be more clearly made between forecasting
+with horse-race polling and public opinion research. However, I will lay that aside for
+a different time.
+
+The point of this post is for me to share my reflections about this year's
+meeting in St. Louis. I unfortunately was not able to attend all sessions
+or am aware of all of the great work that people presented on. From my experience, the
+two common threads were: (1) how can we use generative AI to help public opinion researchers
+be more efficient from an analysis and data collection stand point or to be more
+statistically efficient by using synthetic or silicon data to augment real data collected
+from (presumably) real people; (2) and how can we deal with the pernicious problem of certain
+groups in the public being very unwilling to share their beliefs to public opinion researchers.
+I tended to attend panels that were more focused on the latter so my focus will largely be
+on what I learned from panels on that topic.         
+
+Public opinion researchers are in a very challenging spot. Forecasting is the part of their
+work that gets the most attention and has brought the industry the most scandal. Starting
+with the infamous 1936 Literary Digest miss, scientific polling and public opinion researchers
+have had to react to any miss that members in the industry have made: if one pollster is wrong
+about their prediction for the horse-race, then the industry takes a hit and until they find a
+solution they face significant skepticism. This is not just a pre-Gallup dynamic. Public opinion
+researchers have made misses in recent years such as 
+[Ann Selzer's pre-election poll in Iowa in 2024.](https://www.theguardian.com/us-news/2024/nov/17/iowa-pollster-j-ann-selzer-quits)
+
+The focus of the panels I attended at AAPOR were not only about a problem affecting the
+accuracy of the horse-race question, the underlying issue will affect every question.
+The underlying challenge that the public opinion industry has, which has been highlighted
+by the horse-race question, is how to get the politically-averse to respond to researchers'
+invitations to take part in a survey. The reason this has been an issue is that this particular
+brand of low-propensity responders also tend to be more likely to vote for Trump. Because of this
+problem, the horse-race question in polls have given the Democratic candidate an advantage of
+about [2-4 points.](https://www.theatlantic.com/ideas/archive/2025/05/polling-2024-trump-bias/682834/)
+
+As a result, the public and office holders have been very critical of the field and have argued
+that the polls are biased in a way that benefits Democrats.
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">
+A totally Fake poll that caused great distrust and uncertainty at a very critical time.
+She knew exactly what she was doing. 
+Thank you to the GREAT PEOPLE OF IOWA for giving me such a record breaking vote, despite possible ELECTION FRAUD by Ann Selzer and the now discredited “newspaper” for which she works. 
+An investigation is fully called for!
+</p>&mdash; Donald J Trump (@realDonaldTrump) <a href="https://truthsocial.com/@realDonaldTrump/posts/113500487850838306">November 17, 2024</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+This bias towards benefitting the Democrats is not due to some nefarious actors
+in the public opinion space. Rather it is the very thing that public opinion researchers
+are desperate to solve and I attended a number of presentations related to this issue.
+
+One way in which pollsters have tried to solve this issue is by weighting on past vote.
+The idea behind weighting on past vote is that we ask people who they voted for
+in the last election and then calibrate the weights so that the weighted proportions of those in the sample who
+voted for a Republican in the last election matches the proportion of those in the population
+who voted for the Republican in the last election. The idea is that this helps with differential partisan
+non-response. Since Republicans have proven difficult for pollsters to reach and get to respond,
+the goal of this strategy is to give more weight to the Republicans in the sample so that they
+represent more people in the population than respondents who voted for Democrats or those who didn't vote
+in the previous election or voted this time around.
+
+In 2024, weighting on past vote became a much more common strategy. This image is from
+a [post](https://goodauthority.org/news/pollsters-are-weighting-surveys-differently-in-2024/)
+by Brian Schaffner and Caroline Soler in Good Authority who wrote about this
+uptake in weighting on past vote. I perhaps saw this image in about 5 presentations (3 in the same panel!).
+
+```{=html}
+<img src="https://goodauthority.org/wp-content/uploads/2024/10/variable-1024x734.png" width="800">
+```
+
+There have been a number of critiques of this approach. One of the most prominent is the measurement
+error that can come about when asking people (usually 4) years later who they voted for -- people can
+misremember and this introduces error. Raphael Nishimura at the University of Michigan presented a set
+of simulations showing that even with significant presence of measurement error on the recall vote question (around 40%),
+we still often reduce bias by calibrating on past vote. In an analysis in his presentation, and others throughout the week,
+the presence of measurement error on recall vote is somewhere around 10% of the sample. His point is that
+it is another strategy that moves the needle closer.
+
+The other issue that folks take with calibrating on recall vote is that there is social desirability that is
+involved with asking people whether they had voted in the past and for whom. Eleanor O'Neil from Echelon
+insights presented a paper experimenting with the format of the question to see whether we could limit
+how many people may engage in this social desirability. She compared select-all-that-apply, forced-choice,
+and a question that allows respondent to report that "I did not vote".
+
+Cameron McPhee of SSRS also demonstrated the role of question format to reduce some of the measurement error.
+Cameron specifically experimented with how much measurement error is introduced whether you allow respondents to
+choose between the two major party candidates and an "Other candidate" or to list out the names of all candidates.
+Cameron wanted to determine whether there could be the "shy Trump voters" in this "Other candidate" group. She found
+*some* evidence that these "shy Trump voters" were more likely to report that they supported this "Other candidate".
+When doing the horse-race question, if you push respondents to indicate whether they lean towards one of the two
+major party candidates, Cameron finds some evidence that paired with the format listing the full field of candidates,
+that respondents are a bit more likely to report leaning for one of the major party candidates.
+
+Also suggesting that we think of how to meet these hard-to-reach segments of Trump's voters from a design-based perspective,
+Courtney Kennedy of Pew argued that the industry should use more offline modes for interviewing respondents; using paper
+and CATI techniques. She argued that more Trump voters and those that we have been missing are more likely to show up
+in designs that allow for offline modes based on an analysis of Pew's ATP, Pew's NPORS, and (I believe) the ANES.
+
+While the public opinion industry has been missing some of these Trump voters and do not have them in their datasets,
+it is certainly not through an active or passive lack of trying, there are many that are very engaged with thinking through
+how we can adjust how we approach potential respondents and can make statistical adjustments on the backend to correct
+for this underrepresentation.
+
