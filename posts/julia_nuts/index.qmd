@@ -1,0 +1,266 @@
+---
+title: "Bayesian modeling in Julia: Turing and Stan"
+code-tools: true
+code-fold: false
+code-line-numbers: true
+date: today
+categories:
+  - julia
+  - bayesian
+execute:
+    eval: false
+engine: julia
+---
+
+I've been using `Julia` more and more in my non-work projects. Years ago I had tried out `Julia` but found the syntax and the concepts pretty foreign.
+Over time, I've been exposed more and more to fundamental computer science concepts that have made seem increasingly approachable.
+
+`Julia`, relative to other languages designed for data science, certainly feels much less high-level than `Python` and `R`.
+An obvious reason is that though `Julia` is a dynamically-typed language, it does not use an interpreter in the same way that `Python` and `R` does.
+`Julia` does not go as far as statically-typed and low-level languages such as `C++` where you write the code, save the file, and then compile it
+to be converted into the machine code that ultimately does the work. 
+`Julia` instead leverages a `Just-In-Time` compiler that stores the machine code as you go along. This and a few other features of the JIT compiler
+it uses, `LLVM`, such as Multiple Dispatch, is the reason that many in the scientific computing and data science space have used it as their language
+of choice where one needs to maximize performance.
+
+Aside from the need to understand some computer science concepts as a barrier, another was that I was more comfortable writing my Bayesian statistical
+models in `Stan` using either `cmdstanr` or `cmdstanpy`. These interfaces allowed me to take advantage of the power of `C++` and its wonderful memory management
+along with `Stan`'s use of the No-U-Turn-Sampler for efficient and accurate `MCMC` inference while allowing me to keep using languages that I was comfortable with
+to do all of the other parts outside of fitting the model (i.e., data cleaning, visualizing the results, etc.). As my curiosity around `Julia` grew, I was still
+determined to stick with `Stan` due to my comfort with it and I didn't feel that there was as large of a community (therefore support) for `Stan` (and the NUTS sampler)
+in `Julia`. So, I stayed away.
+
+In the past few months, I have been working on some academic projects in my free time and had seen that I could use the NUTS algorithm using `Turing.jl`.
+I haven't checked how long this algorithm has been available with `Turing.jl` and honestly I don't even remember looking for `Turing.jl` when I had been flirting
+with the language in the past. I had just been looking for "Stan in Julia" and had not seen as much as I was accustomed to in `R` and `Python` circles.
+That is, it was definitely my fault for not having looked into it deeper. But, I don't think I am alone in not seeing `Julia` as being competitive with `R` or even `Python`
+for Bayesian modeling.
+
+A recent side project of mine has been to use Bradley-Terry models to power rank MLB teams. MLB teams are ranked by how many wins and losses they have. 
+The more teams relative to losses a team has, the higher their rankings are in the standings. The use of the Bradley-Terry model is to estimate the latent
+ability of each of the teams. This is done by taking each team and their opponents. 
+To understand how difficult the opponents are, you look at the opponents' opponents and how they've faired against them.
+Teams that may have the same number of wins and losses may be equal in the standings, but if one team has beaten more teams with better records than the other team
+that has beaten fewer teams with better records, then the former team is the one that would have a better latent ability than the latter team.
+
+When I had first been playing around with these models, I was doing it in `Python` with `cmdstanpy`. However, recently, I thought I'd try it out using `Turing.jl`.
+One reason was out of curiosity about how it'd perform against `cmdstanpy`. The other reason was that I had been toying around the idea for a larger project where
+I write a web app to do some Bayesian modeling with a `Julia` backend and thought that I should also try to fit the models using `Turing.jl` rather than do a `Python`
+backend or to use straight-up `cmdstan`.
+
+So, I wrote re-wrote the models that I had in `cmdstanpy` and implemented them in `Turing.jl`. I posted a picture of my terminal on Bluesky and Elliott Morris was
+amazed, like I had been, that `Turing.jl` had NUTS available as the MCMC sampler. He then asked for a blog post comparing between them. I am but a humble servant.
+
+To make apples-to-apples comparisons between `Turing.jl` and `cmdstan` benchmarks, I use `Stan.jl` using `Stan 2.38.0` and `Turing.jl` on my [DETAILS ABOUT COMPUTER HERE]
+and I look at how they do!
+
+Let's first load some packages.
+
+```{julia}
+using DataFrames;
+using DuckDB;
+using Stan;
+using Turing;
+```
+
+Then I am going to connect to my local database (from the project that this was inspired from) and pull in the data.
+
+```{julia}
+# Connect to the DB.
+con = DBInterface.connect(DuckDB.DB, "~/Desktop/mlb_pred/data/twenty_five.db");
+# Pull in the data as a dataframe.
+df = DataFrame(
+    DBInterface.execute(
+        con 
+        , """
+        with a as (
+            select
+                scores.game_id
+                , schedule.home_team
+                , scores.home_runs
+                , schedule.away_team
+                , scores.away_runs
+            from scores
+                left join schedule
+                on scores.game_id=schedule.game_id
+            where schedule.season_id like '2025'
+        )
+        select
+            game_id
+            , teams.team_abbr
+            , dense_rank() over(order by home_team) as home_team
+            , dense_rank() over(order by away_team) as away_team
+            , home_runs
+            , away_runs
+            , (case
+                when home_runs > away_runs then 1
+                else 0
+            end) as home_win
+        from a
+            left join teams
+                on a.home_team=teams.team_id
+        where teams.season_id like '2025'
+        """
+    )
+)
+```
+
+```{julia}
+# Get a unique Dictionary of the team abbreviation and a team number that ranges from 1-30.
+ids = Dict(Pair.(df.team_abbr, df.home_team))
+```
+
+Now, to define the simple Bradley-Terry model.
+
+$$
+\begin{aligned}
+y \sim \text{Bernoulli}(\theta) \\
+\theta = \frac{1}{1 + e^{-(log(\alpha_\text{home}) - log(\alpha_\text{away}))}} \\
+\alpha_D \sim \mathcal{HN}(0, 1)
+\end{aligned}
+$$
+
+::: {.panel-tabset}
+
+## `Stan`
+```{julia}
+# The Stan model code.
+const stan = """
+data {
+  int<lower=1> N; // Number of games.
+  int<lower=1> J; // Number of teams.
+  array[N, 2] int T; // Matrix of team ids.
+  array[N] int<lower=0, upper=1> y; // Did the home team win?
+}
+
+transformed data {
+  // Create a vector indicating each team.
+  array[N] int away = to_array_1d(T[,1]);
+  array[N] int home = to_array_1d(T[,2]);
+}
+
+parameters {
+  vector[J] alpha; // The ability for each team.
+}
+
+model {
+  // Prior on a logged-odds scale of the ability for each team.
+  alpha ~ HalfNormal(0, 1);
+  // Compute the ability for each team given who won.
+  // The ability for the away team is dependent on whether they
+  // beat the home team.
+  // If the away team won, then the logged odd would be
+  // alpha_away * 1 - alpha_home * 0
+  y ~ bernoulli_logit(log(alpha[home]) - log(alpha[away]));
+}
+
+generated quantities {
+  // Compute the ranking of each team based on who won.
+  array[J] int rank; // Ranking of the teams.
+  {
+    // Get the ranking of each team in descending order
+    // of the alpha.
+    array[J] int rank_index = sort_indices_desc(alpha);
+    // For each team, apply the rank
+    // is the rank for team i.
+    for (i in 1:J) {
+      rank[rank_index[i]] = i;
+    }
+  }
+}
+"""
+```
+
+## `Turing.jl`
+
+```{julia}
+# Define the model.
+@model function turing(x, y, d)
+    # Prior for the ability parameter
+    # for each team (length of d).
+    # HalfNormal.
+    α ~ filldist(truncated(Normal(0.,1.), 0., Inf), d)
+    # Likelihood.
+    for i in 1:length(y)
+        θ = log(α[x[i,1]]) - log(α[x[i,2]])
+        y[i] ~ BernoulliLogit(θ)
+    end
+end
+
+# Define the function to rank the teams.
+"""
+    rank
+
+Ranking the ability scores, α, for each object in each posterior draw.
+
+Args:
+    x (Chains): The result of sampling the turing.jl model.
+    d (Int8): The number of objects.
+
+Returns:
+
+"""
+function rank(x, d)
+    # Get the dims of the posterior.
+    iters = size(x,1)
+    chains = size(x,3)
+    # Create a matrix of samples for the α parameter.
+    samples = MCMCChains.group(x, :α).value
+    # Initialize an array of rankings.
+    rank_arr = Array{Integer, 3}(undef, iters, length(d), chains)
+    # Rank the α for each sample.
+    # This should produce an array with the ranking
+    # for each team -- in order.
+    for c in 1:chains
+        for i in 1:iters
+            # Get the current sample for iteration i and chain j
+            current_sample = samples[i, :, c]
+            # Rank the options by sorting the α values
+            # in descending order (higher α means higher rank).
+            ranked_indices = sortperm(current_sample, rev=true)
+            # Assign ranks to each option based on sorted order
+            for rank_idx in 1:length(d)
+                rank_arr[i, ranked_indices[rank_idx], c] = rank_idx
+            end
+        end
+    end
+    # Initialize a DataFrame.
+    df = DataFrame()
+    # Place the rankings into a DataFrame.
+    for c in 1:chains
+        for (key, value) in d
+            temp_df = DataFrame(
+                iter = repeat(iters:-1:1, outer=1)
+                , Rank = rank_arr[:, value, c]
+                , Team = key
+                , chain = c
+            )
+            # Append the temporary DataFrame
+            # to the main DataFrame
+            append!(df, temp_df)
+        end
+    end    
+    # Return the result.
+    return df
+end
+```
+:::
+
+Now, to fit the models.
+
+::: {.panel-tabset}
+
+## `Stan`
+
+## `Turing.jl`
+
+```{julia}
+mod = turing(
+    Matrix(select(df, [:home_team, :away_team]))
+    , df.home_win
+    , length(ids)
+);
+fit = Turing.sample(mod, NUTS(), MCMCThreads(), 4_000, 4);
+turing_ranks = rank(fit, ids);
+```
+:::

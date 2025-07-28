@@ -1,0 +1,4 @@
+[deps]
+DuckDB = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
+Stan = "682df890-35be-576f-97d0-3d8c8b33a550"
+Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
