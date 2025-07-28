@@ -9,7 +9,6 @@ categories:
   - bayesian
 execute:
     eval: false
-engine: julia
 ---
 
 I've been using `Julia` more and more in my non-work projects. Years ago I had tried out `Julia` but found the syntax and the concepts pretty foreign.
@@ -45,27 +44,91 @@ that has beaten fewer teams with better records, then the former team is the one
 
 When I had first been playing around with these models, I was doing it in `Python` with `cmdstanpy`. However, recently, I thought I'd try it out using `Turing.jl`.
 One reason was out of curiosity about how it'd perform against `cmdstanpy`. The other reason was that I had been toying around the idea for a larger project where
-I write a web app to do some Bayesian modeling with a `Julia` backend and thought that I should also try to fit the models using `Turing.jl` rather than do a `Python`
+I write a webapp to do some Bayesian modeling with a `Julia` backend and thought that I should also try to fit the models using `Turing.jl` rather than do a `Python`
 backend or to use straight-up `cmdstan`.
 
 So, I wrote re-wrote the models that I had in `cmdstanpy` and implemented them in `Turing.jl`. I posted a picture of my terminal on Bluesky and Elliott Morris was
 amazed, like I had been, that `Turing.jl` had NUTS available as the MCMC sampler. He then asked for a blog post comparing between them. I am but a humble servant.
 
-To make apples-to-apples comparisons between `Turing.jl` and `cmdstan` benchmarks, I use `Stan.jl` using `Stan 2.38.0` and `Turing.jl` on my [DETAILS ABOUT COMPUTER HERE]
-and I look at how they do!
-
 Let's first load some packages.
 
-```{julia}
+::: {.panel-tabset}
+
+## `R`
+```{.r}
+library(DBI)
+library(dplyr)
+library(duckdb)
+library(cmdstanr)
+library(microbenchmark)
+```
+
+## `Julia`
+```{.julia}
 using DataFrames;
 using DuckDB;
 using Stan;
 using Turing;
 ```
+:::
 
 Then I am going to connect to my local database (from the project that this was inspired from) and pull in the data.
 
-```{julia}
+::: {.panel-tabset}
+
+## `R`
+```{.r}
+# Get the data.
+# - Connect to the DB.
+con <- dbConnect(duckdb(), "~/Desktop/mlb_pred/data/twenty_five.db")
+# - Get the dataframe.
+df <- dbGetQuery(
+    con
+    , "
+    with a as (
+        select
+            scores.game_id
+            , schedule.home_team
+            , scores.home_runs
+            , schedule.away_team
+            , scores.away_runs
+        from scores
+            left join schedule
+            on scores.game_id=schedule.game_id
+        where schedule.season_id like '2025'
+    )
+    select
+        game_id
+        , teams.team_abbr
+        , dense_rank() over(order by home_team) as home_team
+        , dense_rank() over(order by away_team) as away_team
+        , (case
+            when home_runs > away_runs then 1
+            else 0
+        end) as home_win
+    from a
+        left join teams
+        on a.home_team=teams.team_id
+    where teams.season_id like '2025';
+    "
+)
+# - Close the connection.
+dbDisconnect(con, shutdown=TRUE)
+```
+
+```{.r}
+# Get a vector of key-value pairs to map team abbreviations to team ids.
+ids <- vector()
+for (i in seq_len(nrow(df))) {
+    key <- df[i, "team_abbr"]
+    value <- df[i, "home_team"]
+    ids[as.character(key)] <- as.integer(value)
+}
+```
+
+## `Julia`
+
+```{.julia}
 # Connect to the DB.
 con = DBInterface.connect(DuckDB.DB, "~/Desktop/mlb_pred/data/twenty_five.db");
 # Pull in the data as a dataframe.
@@ -90,25 +153,24 @@ df = DataFrame(
             , teams.team_abbr
             , dense_rank() over(order by home_team) as home_team
             , dense_rank() over(order by away_team) as away_team
-            , home_runs
-            , away_runs
             , (case
                 when home_runs > away_runs then 1
                 else 0
             end) as home_win
         from a
             left join teams
-                on a.home_team=teams.team_id
+            on a.home_team=teams.team_id
         where teams.season_id like '2025'
         """
     )
 )
 ```
 
-```{julia}
+```{.julia}
 # Get a unique Dictionary of the team abbreviation and a team number that ranges from 1-30.
 ids = Dict(Pair.(df.team_abbr, df.home_team))
 ```
+:::
 
 Now, to define the simple Bradley-Terry model.
 
@@ -122,10 +184,10 @@ $$
 
 ::: {.panel-tabset}
 
-## `Stan`
-```{julia}
+## `R`
+```{.r}
 # The Stan model code.
-const stan = """
+stan <- "
 data {
   int<lower=1> N; // Number of games.
   int<lower=1> J; // Number of teams.
@@ -135,17 +197,17 @@ data {
 
 transformed data {
   // Create a vector indicating each team.
-  array[N] int away = to_array_1d(T[,1]);
-  array[N] int home = to_array_1d(T[,2]);
+  array[N] int home = to_array_1d(T[,1]);
+  array[N] int away = to_array_1d(T[,2]);
 }
 
 parameters {
-  vector[J] alpha; // The ability for each team.
+  vector<lower=0>[J] alpha; // The ability for each team.
 }
 
 model {
   // Prior on a logged-odds scale of the ability for each team.
-  alpha ~ HalfNormal(0, 1);
+  alpha ~ normal(0, 1);
   // Compute the ability for each team given who won.
   // The ability for the away team is dependent on whether they
   // beat the home team.
@@ -168,12 +230,12 @@ generated quantities {
     }
   }
 }
-"""
+"
 ```
 
-## `Turing.jl`
+## `Julia`
 
-```{julia}
+```{.julia}
 # Define the model.
 @model function turing(x, y, d)
     # Prior for the ability parameter
@@ -250,11 +312,29 @@ Now, to fit the models.
 
 ::: {.panel-tabset}
 
-## `Stan`
+## `R`
+
+```{.r}
+mod <- cmdstan_model(stan)
+dat <- list(
+    N = nrow(df)
+    , J = length(ids)
+    , T = as.matrix(df[, c("home_team", "away_team")])
+    , y = df$home_win
+)
+fit <- mod$sample(
+    data = dat
+    , seed = 123
+    , chains = 4
+    , iter_warmup = 1000
+    , iter_sampling = 3000
+    , show_messages = FALSE
+)
+```
 
 ## `Turing.jl`
 
-```{julia}
+```{.julia}
 mod = turing(
     Matrix(select(df, [:home_team, :away_team]))
     , df.home_win
@@ -262,5 +342,355 @@ mod = turing(
 );
 fit = Turing.sample(mod, NUTS(), MCMCThreads(), 4_000, 4);
 turing_ranks = rank(fit, ids);
+```
+:::
+
+I'll start by providing a disclaimer: This is not a super formal benchmarking analysis; this is meant to give us some rough
+sense of the differences in performance between `cmdstanr` and `Turing.jl`. With that being said, I use the `microbenchmark`
+package in `R` and use `BenchmarkTools` in `Julia`. A select piece of code is executed 100 times and the time is recorded.
+I then compare the average amount of time that the code took to execute.
+
+I am interested in seeing how different pieces of the code compare between `R` and `Julia`. While I am primarily interested
+in the differences between `cmdstanr` and `Turing.jl`, I am also interested in how long it takes to retrieve the data and to
+set things up as well. Rather than just throw all of it into one chunk and get the benchmark for all of the steps, I break
+up the different steps of interest into functions and benchmark each of the functions. Note, these benchmarks do not include
+the compile times of the `Julia` code nor does it include the compile times of the `stan` code -- for each, I compiled them
+before doing the benchmarking. Here is what each script looks like.
+
+::: {.panel-tabset}
+
+## `R`
+
+```{.r}
+# Script for cmdstanr benchmarks.
+library(DBI)
+library(dplyr)
+library(duckdb)
+library(cmdstanr)
+library(microbenchmark)
+
+# Define the number of times to evaluate the functions.
+evals <- 100
+
+# Get the data.
+get_data <- function(){
+    # Connect to the DB.
+    con <- dbConnect(duckdb(), "~/Desktop/mlb_pred/data/twenty_five.db")
+    # Get the dataframe.
+    df <- dbGetQuery(
+        con
+        , "
+        with a as (
+            select
+                scores.game_id
+                , schedule.home_team
+                , scores.home_runs
+                , schedule.away_team
+                , scores.away_runs
+            from scores
+                left join schedule
+                on scores.game_id=schedule.game_id
+            where schedule.season_id like '2025'
+        )
+        select
+            game_id
+            , teams.team_abbr
+            , dense_rank() over(order by home_team) as home_team
+            , dense_rank() over(order by away_team) as away_team
+            , (case
+                when home_runs > away_runs then 1
+                else 0
+            end) as home_win
+        from a
+            left join teams
+            on a.home_team=teams.team_id
+        where teams.season_id like '2025';
+        "
+    )
+    # Close the connection.
+    dbDisconnect(con, shutdown=TRUE)
+    return(df)
+}
+
+# Benchmark the data retreival.
+microbenchmark(get_data(), times=evals)
+
+# Get the dataframe object.
+df <- get_data()
+
+# Get a vector of key-value pairs to map team abbreviations to team ids.
+get_ids <- function(df){
+    ids <- vector()
+    for (i in seq_len(nrow(df))) {
+        key <- df[i, "team_abbr"]
+        value <- df[i, "home_team"]
+        ids[as.character(key)] <- as.integer(value)
+    }
+    return(ids)
+}
+
+# Benchmark the creation of the vector.
+microbenchmark(get_ids(df), times=evals)
+
+# Get the ids vector.
+ids <- get_ids(df)
+
+# The model.
+
+fit_model <- function(df, ids){
+    # Fit the stan model
+    mod <- cmdstan_model("./posts/julia_nuts/bt.stan")
+    dat <- list(
+        N = nrow(df)
+        , J = length(ids)
+        , T = as.matrix(df[, c("home_team", "away_team")])
+        , y = df$home_win
+    )
+    fit <- mod$sample(
+        data = dat
+        , seed = 123
+        , chains = 4
+        , iter_warmup = 1000
+        , iter_sampling = 3000
+        , show_messages = FALSE
+    )
+    return(fit)
+}
+
+# Benchmark it.
+microbenchmark(fit_model(df, ids), times=evals)
+```
+
+## `Julia`
+
+```{.julia}
+# Script for Turing.jl benchmarks
+using BenchmarkTools;
+using DataFrames;
+using DuckDB;
+using Turing;
+
+#  Define the number of times to evaluate the functions.
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 100;
+
+# Get the data.
+function get_data()
+    # Connect to the DB.
+    con = DBInterface.connect(DuckDB.DB, "~/Desktop/mlb_pred/data/twenty_five.db")
+    # Pull in the data as a  dataframe.
+    df = DataFrame(
+        DBInterface.execute(
+            con 
+            , """
+            with a as (
+                select
+                    scores.game_id
+                    , schedule.home_team
+                    , scores.home_runs
+                    , schedule.away_team
+                    , scores.away_runs
+                from scores
+                    left join schedule
+                    on scores.game_id=schedule.game_id
+                where schedule.season_id like '2025'
+            )
+            select
+                game_id
+                , teams.team_abbr
+                , dense_rank() over(order by home_team) as home_team
+                , dense_rank() over(order by away_team) as away_team
+                , (case
+                    when home_runs > away_runs then 1
+                    else 0
+                end) as home_win
+            from a
+                left join teams
+                on a.home_team=teams.team_id
+            where teams.season_id like '2025'
+            """
+        )
+    )
+    # Close the connection.
+    DBInterface.close(con)
+    return df
+end;
+
+# Benchmark the data retreival.
+@benchmark get_data()
+
+# Get the dataframe object.
+df = get_data();
+
+# Get a vector of key-value pairs  to map team abbreviations to team ids.
+function get_ids(df)
+    ids = Dict(Pair.(df.team_abbr, df.home_team))
+end
+
+# Benchmark the creation of the vector.
+@benchmark get_ids(df)
+
+# Get the ids vector.
+ids = get_ids(df);
+
+# The model.
+
+function fit_model(df, ids)
+    # Define the functions.
+    @model function turing(x, y, d)
+        # Prior for the ability parameter
+        # for each team (length of d).
+        # HalfNormal.
+        α ~ filldist(truncated(Normal(0., 1.), 0., Inf), d)
+        # Likelihood.
+        for i in 1:length(y)
+            θ = log(α[x[i,1]]) - log(α[x[i,2]])
+            y[i] ~ BernoulliLogit(θ)
+        end
+    end
+    # Define the function to rank the teams.
+    """
+        rank
+
+    Ranking the ability scores, α, for each object in each posterior draw.
+
+    Args:
+        x (Chains): The result of sampling the turing.jl model.
+        d (Int8): The number of objects.
+
+    Returns:
+
+    """
+    function rank(x, d)
+        # Get the dims of the posterior.
+        iters = size(x,1)
+        chains = size(x,3)
+        # Create a matrix of samples for the α parameter.
+        samples = MCMCChains.group(x, :α).value
+        # Initialize an array of rankings.
+        rank_arr = Array{Integer, 3}(undef, iters, length(d), chains)
+        # Rank the α for each sample.
+        # This should produce an array with the ranking
+        # for each team -- in order.
+        for c in 1:chains
+            for i in 1:iters
+                # Get the current sample for iteration i and chain j
+                current_sample = samples[i, :, c]
+                # Rank the options by sorting the α values
+                # in descending order (higher α means higher rank).
+                ranked_indices = sortperm(current_sample, rev=true)
+                # Assign ranks to each option based on sorted order
+                for rank_idx in 1:length(d)
+                    rank_arr[i, ranked_indices[rank_idx], c] = rank_idx
+                end
+            end
+        end
+        # Initialize a DataFrame.
+        df = DataFrame()
+        # Place the rankings into a DataFrame.
+        for c in 1:chains
+            for (key, value) in d
+                temp_df = DataFrame(
+                    iter = repeat(iters:-1:1, outer=1)
+                    , Rank = rank_arr[:, value, c]
+                    , Team = key
+                    , chain = c
+                )
+                # Append the temporary DataFrame
+                # to the main DataFrame
+                append!(df, temp_df)
+            end
+        end    
+        # Return the result.
+        return df
+    end
+    # Fit the model.
+    mod = turing(
+        Matrix(select(df, [:home_team, :away_team]))
+        , df.home_win
+        , length(ids)
+    );
+    fit = Turing.sample(mod, NUTS(), MCMCThreads(), 4_000, 4);
+    turing_ranks = rank(fit, ids);
+    return turing_ranks
+end
+
+# Benchmark it.
+@benchmark fit_model(df, ids)
+```
+:::
+
+The benchmarks for loading the data:
+
+::: {.panel-tabset}
+
+## `R`
+
+```{.bash}
+Unit: milliseconds
+       expr      min       lq     mean   median       uq     max neval
+ get_data() 18.78206 19.60983 20.10581 19.91485 20.23297 29.5218   100
+```
+
+## `Julia`
+
+```{.bash}
+BenchmarkTools.Trial: 100 samples with 1 evaluation per sample.
+ Range (min … max):  5.433 ms …   8.141 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     5.724 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   5.879 ms ± 461.050 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+   ▃  ▇█▄▃ ▂                                                   
+  ▅██▃██████▆▇▃▅▆▆█▃▃▃▁▁▃▁▁▅▁▃▁▅▃▁▃▁▃▁▁▁▁▁▁▃▁▃▁▁▁▁▁▁▁▁▃▁▁▁▁▁▃ ▃
+  5.43 ms         Histogram: frequency by time        7.61 ms <
+
+ Memory estimate: 117.91 KiB, allocs estimate: 2829.
+```
+:::
+
+The benchmarks for creating the dictionary mapping the team abbreviations and team ids:
+
+::: {.panel-tabset}
+
+## `R`
+
+```{.bash}
+Unit: milliseconds
+        expr      min       lq     mean   median       uq      max neval
+ get_ids(df) 9.954226 10.12694 10.69413 10.45248 11.16924 14.15869   100
+```
+
+## `Julia`
+
+```{.bash}
+BenchmarkTools.Trial: 100 samples with 1 evaluation per sample.
+ Range (min … max):  25.750 μs … 37.208 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     26.834 μs              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   27.056 μs ±  1.694 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+       ▅█                                                      
+  ▆▆█▅▇██▅▅▁▁▃▁▁▁▁▃▃▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃ ▃
+  25.8 μs         Histogram: frequency by time        37.1 μs <
+
+ Memory estimate: 55.27 KiB, allocs estimate: 11.
+```
+:::
+
+
+The benchmarks for fitting the models:
+
+::: {.panel-tabset}
+
+## `R`
+
+```{.bash}
+Unit: seconds
+               expr     min       lq    mean   median       uq      max neval
+ fit_model(df, ids) 7.38629 7.464158 7.57126 7.535486 7.625566 8.083352   100
+```
+
+## `Julia`
+
+```{.bash}
+
 ```
 :::
