@@ -264,3 +264,9 @@ $web-font-path: "https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap
     }
   }
 }
+
+// Panel tabsets
+.panel-tabset .nav-tabs .nav-link {
+  background-color: body-mix(85%);
+  color: $black;
+}
