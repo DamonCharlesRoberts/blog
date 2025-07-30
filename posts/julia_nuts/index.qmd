@@ -3,7 +3,7 @@ title: "Bayesian modeling in Julia: Turing and Stan"
 code-tools: true
 code-fold: false
 code-line-numbers: true
-date: today
+date: 2025-07-28
 categories:
   - julia
   - bayesian
