@@ -281,24 +281,3 @@ The full repository containing all of this can be found on my
 ```
 
 :::
-
-
-
-
-
-
-
-There are a few tweaks I could make to these models:
-
-- Play around with the priors for the parameters a bit more. 
-  Though from testing, I don't think they will make too much of a difference here.
-
-- I could do things like a hierarchical model where I model player ability and sum the ability
-  of the players for each team. 
-  One issue with this approach is that the players for each team tends to remain relatively 
-  stable over time. 
-  While pitching may change, the rotation of pitchers tends to remain somewhat stable. 
-  So, it may be something to try, but my a priori expectation is that it won't help the model much.
-
-- There may be more that I am not thinking of, but Spring Training is underway
-  and I am just too excited to sit on this project too much longer!
