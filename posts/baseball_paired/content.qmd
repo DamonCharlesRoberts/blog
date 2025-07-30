@@ -32,7 +32,7 @@ One type of these models is called the Bradley-Terry model.
 $$
 \begin{align}
 y_i \sim Bernoulli(logit^{-1}(log(\alpha_h) - log(\alpha_a))\\
-\alpha \sim \mathcal{N}(0,1)
+\alpha \sim \mathcal{HN}(0,1)
 \end{align}
 $$
 
