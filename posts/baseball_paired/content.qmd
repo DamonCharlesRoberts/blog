@@ -1,6 +1,6 @@
 ---
-title: "Bayesian Paired Comparisons for power ranking MLB teams (2019-2024)"
-date: 02/22/2025
+title: "Bayesian Paired Comparisons for power ranking MLB teams (2019-2025)"
+date: today
 categories:
     - baseball
     - bayesian
@@ -11,13 +11,9 @@ execute:
     echo: true
 ---
 
-Baseball is back! Spring training for the 2025 season started just a few days ago.
-Over the course of the off-season, here and there, I have been pulling this project
-together. THe goal: power-rank each team.
-
 Standings allow us to rank teams based on who has more wins
 and fewer losses. Not all teams play one another over the course of a season.
-For followers of NCAA fottball, this is often a source of consternation in
+For followers of NCAA football, this is often a source of consternation in
 the build-up to the playoff selection: do teams that play and win a lot
 against weaker opponents deserve to have as high of a rank as a team
 that may have relatively more losses but has played against much tougher
@@ -35,12 +31,12 @@ One type of these models is called the Bradley-Terry model.
 
 $$
 \begin{align}
-y_i \sim Bernoulli(logit^{-1}(\alpha_a - \alpha_h))\\
+y_i \sim Bernoulli(logit^{-1}(log(\alpha_h) - log(\alpha_a))\\
 \alpha \sim \mathcal{N}(0,1)
 \end{align}
 $$
 
-Where $y_i$ is equal to 0 if the home team won and 1 if the away
+Where $y_i$ is equal to 1 if the home team won and 0 if the away
 team won. $\alpha_a$ is the parameter for the estimated latent ability
 of the away team, while $\alpha_h$ is a parameter for the estimated
 latent ability of the home team. I then sort the estimated $\alpha$ parameter
@@ -50,48 +46,28 @@ in descending order to get an estimated rank for each team.
 <summary>Show Stan code</summary>
 ```{.stan}
 // Simple Bradley-Terry model.
-
 data {
   int<lower=1> N; // Number of games.
   int<lower=1> J; // Number of teams.
-  array[N, 2] int T; // Matrix of team ids. T[N, 1] = Away. T[N, 2] = Home.
-  matrix[N, 2] S; // Matrix of scores. S[N, 1] = Away score; S[N, 2] = Home.
-}
-
-transformed data {
-  // Compute who won.
-  // Place in a vector where:
-  // - 1 indicates the away team won
-  // - 0 indicates the home team won
-  array[N] int<lower=0, upper=1> y;
-  for (n in 1:N) {
-    real diff = S[n, 1] - S[n, 2];
-    if (diff < 0)
-      y[n] = 0;
-    else
-      y[n] = 1;
-  }
-  // Create a vector indicating each team.
-  array[N] int away = to_array_1d(T[,1]);
-  array[N] int home = to_array_1d(T[,2]);
+  array[N, 2] int X; // Matrix of team ids.
+  array[N] int<lower=0, upper=1> y; // Did the home team win?
 }
 
 parameters {
-  vector[J] alpha; // The ability for each team.
+  vector<lower=0>[J] alpha; // The ability for each team.
 }
 
 model {
   // Prior on a logged-odds scale of the ability for each team.
   alpha ~ normal(0, 1);
   // Compute the ability for each team given who won.
-  // The ability for the away team is dependent on whether they
-  // beat the home team.
-  // If the away team won, then the logged odd would be
-  // alpha_away * 1 - alpha_home * 0
-  y ~ bernoulli_logit(alpha[away] - alpha[home]);
+  y ~ bernoulli_logit(log(alpha[X[,1]]) - log(alpha[X[,2]]));
 }
 
 generated quantities {
+  // PPC
+  array[N] int<lower=0, upper=1> y_rep;
+  y_rep = bernoulli_logit_rng(alpha[X[,1]] - alpha[X[,2]]);
   // Now compute the ranking of each team based on who won.
   array[J] int rank; // Ranking of the teams.
   {
@@ -114,8 +90,8 @@ as a parameter to estimate the home-field advantage.
 
 $$
 \begin{align}
-y_i \sim Bernoulli(logit^{-1}(\alpha_a - \alpha_h + \gamma))\\
-\alpha \sim \mathcal{N}(0,1)\\
+y_i \sim Bernoulli(logit^{-1}(log(\alpha_h) - log(\alpha_a) + \gamma))\\
+\alpha \sim \mathcal{HN}(0,1)\\
 \gamma \sim \mathcal{N}(0,1)
 \end{align}
 $$
@@ -124,34 +100,15 @@ $$
 <summary>Show Stan code</summary>
 ```{.stan}
 // Simple Bradley-Terry model with Home-field advantage.
-
 data {
   int<lower=1> N; // Number of games.
   int<lower=1> J; // Number of teams.
-  array[N, 2] int T; // Matrix of team ids. T[N, 1] = Away. T[N, 2] = Home.
-  matrix[N, 2] S; // Matrix of scores. S[N, 1] = Away score; S[N, 2] = Home.
-}
-
-transformed data {
-  // Compute who won.
-  // Place in a vector where:
-  // - 1 indicates the away team won
-  // - 0 indicates the home team won
-  array[N] int<lower=0, upper=1> y;
-  for (n in 1:N) {
-    real diff = S[n, 1] - S[n, 2];
-    if (diff < 0)
-      y[n] = 0;
-    else
-      y[n] = 1;
-  }
-  // Create a vector indicating each team.
-  array[N] int away = to_array_1d(T[,1]);
-  array[N] int home = to_array_1d(T[,2]);
+  array[N, 2] int X; // Matrix of team ids.
+  array[N] int<lower=0, upper=1> y; // Did the home team win?
 }
 
 parameters {
-  vector[J] alpha; // The ability for each team.
+  vector<lower=0>[J] alpha; // The ability for each team.
   real gamma; // Intercept term to provide a home-field advantage.
 }
 
@@ -161,114 +118,13 @@ model {
   // Prior for home-field advantage.
   gamma ~ normal(0, 1);
   // Compute the ability for each team given who won.
-  // The ability for the away team is dependent on whether they
-  // beat the home team.
-  // If the away team won, then the logged odd would be
-  // alpha_away * 1 - alpha_home * 0 + gamma
-  y ~ bernoulli_logit(alpha[away] - alpha[home] + gamma);
+  y ~ bernoulli_logit(log(alpha[X[,1]]) - log(alpha[X[,2]]) + gamma);
 }
 
 generated quantities {
-  // Now compute the ranking of each team based on who won.
-  array[J] int rank; // Ranking of the teams.
-  {
-    // Get the ranking of each team in descending order of the alpha.
-    array[J] int rank_index = sort_indices_desc(alpha);
-    // For each team, apply the rank so that the median value for rank[i]
-    // is the rank for team i.
-    for (i in 1:J) {
-      rank[rank_index[i]] = i;
-    }
-  }
-}
-```
-</details>
-
-Finally, I run an extension of the Bradley-Terry model which is sometimes 
-referred to as the Davidson model which allows for ties and an ordered
-set of outcomes. 
-That is, rather than simply predicting whether or not a team won or not, 
-now my model is supposed to predict the magnitude of the win. 
-That is, in this final model, $y_i$ is equal to 1 if the home team won
-by 5 or more runs, 2 if the home team won by between 2 and 4 runs,
-3 if the home team won by 1 run, 4 if the home and away team tied,
-5 if the away team won by 1 run, 6 if the away team won by between
-2 and 4 runs, and 7 if the away team won by 5 or more runs.
-One issue with this model, is that ties are not common at all due
-to the allowance for extra innings.
-This gives my ordered logistic regression some problems due to how
-rare those events are relative to the other possible outcomes.
-
-$$
-\begin{align}
-y_i \sim Categorical(\alpha_a - \alpha_h + \gamma)\\
-\alpha \sim \mathcal{N}(0,1)\\
-\gamma \sim \mathcal{N}(0,1)
-\end{align}
-$$
-
-<details>
-<summary>Show Stan code</summary>
-```{.stan}
-// Ordered Bradley-Terry model with Home-field advantage.
-
-data {
-  int<lower=1> N; // Number of games.
-  int<lower=1> J; // Number of teams.
-  array[N, 2] int T; // Matrix of team ids. T[N, 1] = Away. T[N, 2] = Home.
-  matrix[N, 2] S; // Matrix of scores. S[N, 1] = Away score; S[N, 2] = Home.
-}
-
-transformed data {
-  // Compute who won.
-  // Place in a vector where:
-  // - Pos. diff indicates the away team won.
-  // - Neg. diff indicates the home team won.
-  array[N] int<lower=1, upper=7> y;
-  for (n in 1:N) {
-    real diff = S[n, 1] - S[n, 2];
-    if (diff<=-5)
-      y[n] = 1;
-    else if (diff<=-2 && diff>=-4)
-      y[n] = 2;
-    else if (diff==-1)
-      y[n] = 3;
-    else if (diff==0)
-      y[n] = 4;
-    else if (diff==1)
-      y[n] = 5;
-    else if (diff>=2 && diff<=4)
-      y[n] = 6;
-    else if (diff>=5)
-      y[n] = 7;
-  }
-  // Create a vector indicating each team.
-  array[N] int away = to_array_1d(T[,1]);
-  array[N] int home = to_array_1d(T[,2]);
-}
-
-parameters {
-  vector[J] alpha; // The ability for each team.
-  real gamma; // Intercept term to provide a home-field advantage.
-  ordered[6] c; // Number of cutpoints.
-}
-
-model {
-  // Prior on a logged-odds scale of the ability for each team.
-  alpha ~ normal(0, 1);
-  // Prior for home-field advantage.
-  gamma ~ normal(0, 1);
-  // Compute the ability for each team given who won.
-  // The ability for the away team is dependent on whether they
-  // beat the home team.
-  // If the away team won, then the logged odd would be
-  // alpha_away * 1 - alpha_home * 0 + gamma
-  for (n in 1:N){
-    y[n] ~ ordered_logistic(alpha[away[n]] - alpha[home[n]] + gamma, c);
-  }
-}
-
-generated quantities {
+  // PPC.
+  array[N] int<lower=0, upper=1> y_rep;
+  y_rep = bernoulli_logit_rng(alpha[X[,1]] - alpha[X[,2]] + gamma);
   // Now compute the ranking of each team based on who won.
   array[J] int rank; // Ranking of the teams.
   {
@@ -285,92 +141,69 @@ generated quantities {
 </details>
 
 I pulled the boxscores for the 2019, 2020, 2021, 2022, 2023, and 2024 regular
-seasons from the MLB API. 
-With these data, I fit these three models using cmdstanpy.
-I fit these models and retain the last 2000 simulations (or draws) of the 
+seasons from the MLB API. The 2025 model estimates are based on boxscores as of the date of this blog post update! 
+With these data, I fit these models using `cmdstanpy`.
+I fit these models and retain the last 3000 simulations (or draws) of the 
 estimated rankings. 
 The full repository containing all of this can be found on my 
 [GitHub](https://github.com/DamonCharlesRoberts/mlb_pred).
 
 ::: {.panel-tabset}
-## 2019 Simple
 
-```{=html}
+## 2025 Simple
+
 <iframe width="800" height="800"
-    src="./2019_btl_estimates.html"
+    src="./2025_btl.svg"
 ></iframe>
-```
 
-## 2019 Home Adv.
+## 2025 Home Adv.
 
-```{=html}
 <iframe width="800" height="800"
-    src="./2019_home_estimates.html"
+    src="./2025_home.svg"
 ></iframe>
-```
-
-## 2019 Ordered
-```{=html}
-<iframe width="800" height="800"
-    src="./2019_mag_estimates.html"
-></iframe>
-```
 
 :::
 
 ::: {.panel-tabset}
-## 2020 Simple
+
+## 2024 Simple
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2020_btl_estimates.html"
+    src="./2024_btl_estimates.html"
 ></iframe>
 ```
 
-## 2020 Home Adv.
+## 2024 Home Adv.
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2020_home_estimates.html"
+    src="./2024_home_estimates.html"
 ></iframe>
 ```
-
-## 2020 Ordered
-```{=html}
-<iframe width="800" height="800"
-    src="./2020_mag_estimates.html"
-></iframe>
-```
-
 :::
 
 ::: {.panel-tabset}
-## 2021 Simple
+
+## 2023 Simple
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2021_btl_estimates.html"
+    src="./2023_btl_estimates.html"
 ></iframe>
 ```
 
-## 2021 Home Adv.
+## 2023 Home Adv.
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2021_home_estimates.html"
+    src="./2023_home_estimates.html"
 ></iframe>
 ```
-
-## 2021 Ordered
-```{=html}
-<iframe width="800" height="800"
-    src="./2021_mag_estimates.html"
-></iframe>
-```
-
 :::
 
 ::: {.panel-tabset}
+
 ## 2022 Simple
 
 ```{=html}
@@ -387,67 +220,73 @@ The full repository containing all of this can be found on my
 ></iframe>
 ```
 
-## 2022 Ordered
-```{=html}
-<iframe width="800" height="800"
-    src="./2022_mag_estimates.html"
-></iframe>
-```
-
 :::
 
-
 ::: {.panel-tabset}
-## 2023 Simple
+
+## 2021 Simple
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2023_btl_estimates.html"
+    src="./2021_btl_estimates.html"
 ></iframe>
 ```
 
-## 2023 Home Adv.
+## 2021 Home Adv.
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2023_home_estimates.html"
-></iframe>
-```
-
-## 2023 Ordered
-```{=html}
-<iframe width="800" height="800"
-    src="./2023_mag_estimates.html"
+    src="./2021_home_estimates.html"
 ></iframe>
 ```
 
 :::
 
 ::: {.panel-tabset}
-## 2024 Simple
+
+## 2020 Simple
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2024_btl_estimates.html"
+    src="./2020_btl_estimates.html"
 ></iframe>
 ```
 
-## 2024 Home Adv.
+## 2020 Home Adv.
 
 ```{=html}
 <iframe width="800" height="800"
-    src="./2024_home_estimates.html"
-></iframe>
-```
-
-## 2024 Ordered
-```{=html}
-<iframe width="800" height="800"
-    src="./2024_mag_estimates.html"
+    src="./2020_home_estimates.html"
 ></iframe>
 ```
 
 :::
+
+::: {.panel-tabset}
+
+## 2019 Simple
+
+```{=html}
+<iframe width="800" height="800"
+    src="./2019_btl_estimates.html"
+></iframe>
+```
+
+## 2019 Home Adv.
+
+```{=html}
+<iframe width="800" height="800"
+    src="./2019_home_estimates.html"
+></iframe>
+```
+
+:::
+
+
+
+
+
+
 
 There are a few tweaks I could make to these models:
 
