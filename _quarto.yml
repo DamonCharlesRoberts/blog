@@ -11,8 +11,8 @@ website:
         href: https://github.com/damoncharlesroberts
   page-footer:
     center: |
-      <span class="faux-block">{{< fa brands creative-commons >}} 2021-2025 Damon Charles Roberts</span>
-      <span class="faux-block"><br>All content licensed under {{< fa brands creative-commons >}} {{< fa brands creative-commons-by >}} {{< fa brands creative-commons-sa >}} [Creative Commons CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)</span>
+      <span class="faux-block">{{< fa brands creative-commons >}} 2025 Damon Charles Roberts</span>
+      <span class="faux-block"><br>All content licensed under {{< fa brands creative-commons >}} [NON-AI CC0 1.0 Universal](https://github.com/DamonCharlesRoberts/blog?tab=License-1-ov-file)</span>
 
 format:
   html:
