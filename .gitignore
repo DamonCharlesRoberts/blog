@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 advent_2022/code/.jupyter_cache/
+=======
+/.quarto/
+**/*.quarto_ipynb
+>>>>>>> 24c2cf9 (Reorg repo.)
