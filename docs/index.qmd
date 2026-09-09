@@ -1,0 +1,28 @@
+--
+title: "Advent of Code Solutions"
+date: 12/06/2024
+categories:
+    - code
+draft: false
+engine: rmarkdown
+execute:
+    message: false
+    warning: false
+    echo: false
+---
+
+# 2024
+
+Here are my attempts at the puzzles for Advent of Code 2024!
+
+[Day 1 solution](https://github.com/DamonCharlesRoberts/advent_2024/blob/main/src/day_1.py)
+[Day 2 solution](https://github.com/DamonCharlesRoberts/advent_2024/blob/main/src/day_2.py)
+[Day 3 solution](https://github.com/DamonCharlesRoberts/advent_2024/blob/main/src/day_3.py)
+[Day 4 solution](https://github.com/DamonCharlesRoberts/advent_2024/blob/main/src/day_4.py)
+[Day 5 solution](https://github.com/DamonCharlesRoberts/advent_2024/blob/main/src/day_5.py)
+
+# 2022
+
+Here are my attempts at the puzzles for Advent of Code 2022!
+
+- [Solutions across all days](https://htmlpreview.github.io/?https://github.com/DamonCharlesRoberts/advent_of_code/blob/main/advent_2022/code/dcr_aoc.html)
