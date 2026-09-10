@@ -3,7 +3,8 @@ project:
 
   render:
     - index.qmd
-    - posts/advent_of_code/docs/index.qmd
+    - posts/advent_of_code/docs/blog.qmd
+    - posts/mlb_pred/docs/blog.qmd
 
 website:
   title: "A neglected blog"

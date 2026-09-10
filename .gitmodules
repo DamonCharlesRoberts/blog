@@ -1,3 +1,6 @@
 [submodule "posts/advent_of_code"]
 	path = posts/advent_of_code
 	url = https://github.com/damoncharlesroberts/advent_of_code.git
+[submodule "posts/mlb_pred"]
+	path = posts/mlb_pred
+	url = https://github.com/damoncharlesroberts/mlb_pred.git
