@@ -4,3 +4,9 @@
 [submodule "posts/mlb_pred"]
 	path = posts/mlb_pred
 	url = https://github.com/damoncharlesroberts/mlb_pred.git
+[submodule "posts/julia_nuts"]
+	path = posts/julia_nuts
+	url = https://github.com/damoncharlesroberts/julia_nuts.git
+[submodule "posts/jokic_tracker"]
+	path = posts/jokic_tracker
+	url = https://github.com/damoncharlesroberts/jokic_tracker.git

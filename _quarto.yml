@@ -5,6 +5,8 @@ project:
     - index.qmd
     - posts/advent_of_code/docs/blog.qmd
     - posts/mlb_pred/docs/blog.qmd
+    - posts/julia_nuts/docs/blog.qmd
+    - posts/jokic_tracker/docs/blog.qmd
 
 website:
   title: "A neglected blog"
