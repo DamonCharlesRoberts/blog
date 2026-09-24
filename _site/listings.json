@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/paired_comparisons/docs/blog.html",
       "/posts/mlb_pred/docs/blog.html",
       "/posts/julia_nuts/docs/blog.html",
       "/posts/advent_of_code/docs/blog.html",
