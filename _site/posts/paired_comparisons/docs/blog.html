@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-09-24">
+
+<title>Paired Comparisons in PyMC – A neglected blog</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-b5e4710fb912ad3120ebb9bf45b132ca.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-d3121e425ef8652bc583a73d617c1e32.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-b5e4710fb912ad3120ebb9bf45b132ca.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-b13aeb683366107242868fc7854a6903.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-94f1a1ea625abc169631615ac61cf386.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-b13aeb683366107242868fc7854a6903.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed fullcontent quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">A neglected blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="https://damoncroberts.io"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/damoncharlesroberts"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Paired Comparisons in <code>PyMC</code></h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 24, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+
+<p>Paired comparison models are very helpful. In a handful of my other blog posts I use them as a way to do “power rankings” for <a href="https://blog.damoncroberts.io/posts/mlb_pred/docs/blog">professional baseball teams</a>. However, they can be applied to more settings than just sports. Other examples include settings where you want to understand which item may be preferred more by customers and which political candidates may be more popular in head-to-head matchups.</p>
+<p>The key estimand of interest in these models is to measure the “ability” (or the attractiveness, or skill, etc.) of objects that are being compared.</p>
+<p>They are particularly helpful in settings where you do not see a match-up between all “competitors” (borrowing sports-lingo), but rather see match-ups between some of the competitors. There are many scenarios where this might occur either because the sports league’s schedule is not set up to have all competitors compete against one another before determining the champion, because having every permutation of products being compared by customers would be costly, or because not all political candidates are systematically put-head-to-head in repeated elections. If we were in settings like that, then the task for determining the most capable competitor would be relatively easy.</p>
+<p>There are a few different flavors of Paired Comparison models and I will cover some of the ones that I am most familiar with. And will provide pseudo-code of how you might implement these with a Bayesian Probabilistic Programming library in Python called <code>PyMC</code>.</p>
+<p>The first is referred to as the Bradley-Terry model. The other paired comparison models I cover here will expand upon the Bradley-Terry model. You can use one of these other paired comparison models, combine aspects of them, or use other familiar techniques like hiearchical models. Because of its simplicity, the Bradley-Terry model makes it easy as an entry point into these types of models.</p>
+<section id="bradley-terry" class="level1">
+<h1>Bradley-Terry</h1>
+<p>Recall that the key goal of paired comparison models is to estimate the “ability” of objects that are being compared.</p>
+<p>With this goal in mind:</p>
+<p><span class="math display">\[
+P(i \text{ beats } j) = \frac{\alpha_i}{\alpha_i + \alpha_j}
+\]</span></p>
+<p>where <span class="math inline">\(\alpha_i\)</span> refers to the latent ability of competitor <span class="math inline">\(i\)</span> and <span class="math inline">\(\alpha_j\)</span> refers to the latent ability of competitor <span class="math inline">\(j\)</span>. <span class="math inline">\(\alpha\)</span> is a vector of size <span class="math inline">\(K\)</span>. The Bradley-Terry model is reather intuitive. The higher the ability for competitor <span class="math inline">\(i\)</span>, the higher the probability that <span class="math inline">\(i\)</span> beats <span class="math inline">\(j\)</span> in a head-to-head competition. This is reparameterized as:</p>
+<p><span class="math display">\[
+\begin{aligned}
+    P(i \text{ beats } j) &amp;= \frac{\alpha_i}{\alpha_i + \alpha_j} \\
+                               &amp;= \frac{e^{\lambda_i}}{e^{\lambda_i} + e^{\lambda_j}} \\
+                               &amp;= \frac{e^{(\lambda_i - \lambda_j)}}{1 + e^{(\lambda_i - \lambda_j)}} \\
+                               &amp;= \frac{1}{1 + e^{-(\lambda_i - \lambda_j)}}
+                               &amp;= \text{logit}^{-1}(\lambda_i - \lambda_j)
+\end{aligned}
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+\lambda_K = log(\alpha_K), \quad k = 1, \dots, K
+\]</span></p>
+<p>For identification of the model we need to apply a sum-to-zero constraint:</p>
+<p><span class="math display">\[
+\sum_{k=1}^K \lambda_k = 0
+\]</span></p>
+<p>This is done by updating <span class="math inline">\(\lambda\)</span> for each competitor:</p>
+<p><span class="math display">\[
+\lambda_k := \lambda_k - \bar{\lambda}
+\]</span></p>
+<p>In words, for each competitor, it’s log of the estimated latent ability is updated by subtracting the mean of the log latent abilities from all competitors.</p>
+<blockquote class="blockquote">
+<p>Note that the other paired comparison models need this sum-to-zero constraint. To keep the post short, I do not belabor this point for the other models. This should be taken into consideration, though, when implementing any of those models.</p>
+</blockquote>
+<p>If we consider the realization of each competition between <span class="math inline">\(i\)</span> and <span class="math inline">\(j\)</span>, <span class="math inline">\(y_{i,j}\)</span>, to be a random variable, then a common parameterization of the Bradley-Terry model is:</p>
+<p><span class="math display">\[
+\begin{aligned}
+    y_{i,j} \sim \text{Bernoulli}(\theta) \\
+    \theta = \text{logit}^{-1}(\lambda_i - \lambda_j)
+\end{aligned}
+\]</span></p>
+<p>We can fit such a model with <code>PyMC</code>.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Structure of the Data</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href=""><code>PyMC</code></a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">row</th>
+<th style="text-align: center;">y</th>
+<th style="text-align: center;">Competitor 1</th>
+<th style="text-align: center;">Competitor 2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math inline">\(y = 0\)</span> if competitor 1 loses and <span class="math inline">\(y = 1\)</span> if competitor 1 wins.</p>
+<p>Competitor A wins twice (rows 2 and 3) and Competitor B wins twice (rows 1 and 4).</p>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pymc <span class="im">as</span> pm</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Assuming that df is a pandas DataFrame.</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>competitor_1 <span class="op">=</span> df[<span class="st">"competitor_1"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>competitor_2 <span class="op">=</span> df[<span class="st">"competitor_2"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> pm.Model() <span class="im">as</span> bt:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    _y_obs <span class="op">=</span> pm.Data(<span class="st">"y_obs"</span>, df[<span class="st">"y"</span>], dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    _competitor_1 <span class="op">=</span> pm.Data(<span class="st">"competitor_1"</span>, competitor_1, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    _competitor_2 <span class="op">=</span> pm.Data(<span class="st">"competitor_2"</span>, competitor_2, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Instantiate parameters and define priors.</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    _alpha <span class="op">=</span> pm.HalfNormal(<span class="st">"alpha"</span>, sigma<span class="op">=</span><span class="dv">1</span>, shape<span class="op">=</span><span class="dv">2</span>) <span class="co"># latent ability of competitors</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log of ability with sum-to-zero constraint</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    _lambda_unconstrained <span class="op">=</span> pm.math.log(_alpha)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    _lambda <span class="op">=</span> _lambda_unconstrained <span class="op">-</span> pm.math.mean(_lambda_unconstrained)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data-generating process.</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    _theta <span class="op">=</span> pm.math.invlogit(_lambda[_competitor_1] <span class="op">-</span> _lambda[_competitor_2])</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    _y <span class="op">=</span> pm.Bernoulli(<span class="st">"y"</span>, _theta, observed <span class="op">=</span> _y_obs)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit the model.</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    bt_idata <span class="op">=</span> pm.sample(draws<span class="op">=</span><span class="dv">2_000</span>, warmup<span class="op">=</span><span class="dv">2_000</span>, seed<span class="op">=</span><span class="dv">42</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="paired-comparison-with-order-effect" class="level1">
+<h1>Paired Comparison with order effect</h1>
+<p>The addition of an intercept term acts as a baseline advantage for the competitor that is not explained by ability. This works for situations where there is a “home-field” advantage effect or where the order of presentation matters.</p>
+<p><span class="math display">\[
+P(i \text{ beats } j) = \text{logit}^{-1}(\gamma + \alpha_i - \alpha_j)
+\]</span></p>
+<p>using the Bayesian notation, the model is:</p>
+<p><span class="math display">\[
+\begin{aligned}
+    y_{i,j} \sim \text{Bernoulli}(\theta) \\
+    \theta = logit^{-1}(\gamma + \lambda_i - \lambda_j)
+\end{aligned}
+\]</span></p>
+<p>The intution is clear arithmatically. The <span class="math inline">\(\gamma\)</span> term provides an additional boost to <span class="math inline">\(P(i \text{ beats } j)\)</span> based on the size of <span class="math inline">\(\gamma\)</span> and it is distinct from <span class="math inline">\(\alpha_i\)</span>. If <span class="math inline">\(j\)</span> has the advantage, then <span class="math inline">\(\gamma\)</span> would be subtracted rather than added. It is important to note that this <span class="math inline">\(\gamma\)</span> is not specific to each competitor, but it is the average home-field advantage across all competitors.</p>
+<p>Taking the same data from above, but now Competitor 1 refers to the competitor with this advantage, the code for the standard Bradley-Terry is updated to:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href="">Structure of the Data</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href=""><code>PyMC</code></a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">row</th>
+<th style="text-align: center;">y</th>
+<th style="text-align: center;">Competitor 1</th>
+<th style="text-align: center;">Competitor 2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+</tr>
+</tbody>
+</table>
+<p>Competitor 1 is the competitor with the home-field advantage.</p>
+<p><span class="math inline">\(y = 0\)</span> if competitor 1 loses and <span class="math inline">\(y = 1\)</span> if competitor 1 wins.</p>
+<p>Competitor A wins twice (rows 2 and 3) and Competitor B wins twice (rows 1 and 4).</p>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pymc <span class="im">as</span> pm</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Assuming that df is a pandas DataFrame.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>competitor_1 <span class="op">=</span> df[<span class="st">"competitor_1"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>competitor_2 <span class="op">=</span> df[<span class="st">"competitor_2"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> pm.Model() <span class="im">as</span> bt:</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data.</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    _y_obs <span class="op">=</span> pm.Data(<span class="st">"y_obs"</span>, df[<span class="st">"y"</span>], dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    _competitor_1 <span class="op">=</span> pm.Data(<span class="st">"competitor_1"</span>, competitor_1, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    _competitor_2 <span class="op">=</span> pm.Data(<span class="st">"competitor_2"</span>, competitor_2, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Instantiate parameters and define priors.</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    _gamma <span class="op">=</span> pm.Normal(<span class="st">"gamma"</span>, mu<span class="op">=</span><span class="dv">0</span>, sigma<span class="op">=</span><span class="dv">1</span>) <span class="co"># home-field advantage.</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    _alpha <span class="op">=</span> pm.HalfNormal(<span class="st">"alpha"</span>, sigma<span class="op">=</span><span class="dv">1</span>, shape<span class="op">=</span><span class="dv">2</span>) <span class="co"># latent ability of competitors</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log of ability with sum-to-zero constraint</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    _lambda_unconstrained <span class="op">=</span> pm.math.log(_alpha)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    _lambda <span class="op">=</span> _lambda_unconstrained <span class="op">-</span> pm.math.mean(_lambda_unconstrained)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data-generating process.</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    _theta <span class="op">=</span> pm.math.invlogit(_lambda[_competitor_1] <span class="op">-</span> _lambda[_competitor_2] <span class="op">+</span> _gamma)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    _y <span class="op">=</span> pm.Bernoulli(<span class="st">"y"</span>, _theta, observed <span class="op">=</span> _y_obs)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit the model.</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    bt_idata <span class="op">=</span> pm.sample(draws<span class="op">=</span><span class="dv">2_000</span>, warmup<span class="op">=</span><span class="dv">2_000</span>, seed<span class="op">=</span><span class="dv">42</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="paired-comparison-with-covariates" class="level1">
+<h1>Paired Comparison with covariates</h1>
+<p>If there are covariates that may be of substantive interest or to aid with causal identification for competitor <span class="math inline">\(i\)</span>, then the Bradley-Terry parameterization is expanded.</p>
+<p>Here are some of the common terms used to describe different types of covariates across applications of paired comparison models.</p>
+<p>This is not all encompassing, however, they cover some of the common ones that are specific to the objects that are being compared (competitors).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 43%">
+<col style="width: 32%">
+<col style="width: 24%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Covariate type</th>
+<th style="text-align: center;">Definition</th>
+<th style="text-align: center;">Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Object-specific</td>
+<td style="text-align: center;">Specific to a competitor, regardless of opponent</td>
+<td style="text-align: center;">Total revenue of team</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Subject-specific</td>
+<td style="text-align: center;">Characteristic of the one making the comparison</td>
+<td style="text-align: center;">The age of the judge</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dyadic/pairwise</td>
+<td style="text-align: center;">Relational variable for that particular pairing of competitors</td>
+<td style="text-align: center;">Travel distance differential</td>
+</tr>
+</tbody>
+</table>
+<p>Expanding the Bradley-Terry parameterization to account for these would be handled slightly differently depending on which type of covariate.</p>
+<blockquote class="blockquote">
+<p>These competitor-specific covariates are distinct from “match”-specific covariates. Match-specific covariates may be included in the model as well but the paired comparison model would be expaned to a multilevel model.</p>
+</blockquote>
+<section id="an-object-specific-covariate" class="level2">
+<h2 class="anchored" data-anchor-id="an-object-specific-covariate">An object-specific covariate</h2>
+<p>Under this scenario, the Bradley-Terry parameterization can be expanded to:</p>
+<p><span class="math display">\[
+\begin{aligned}
+    y_{i, j} \sim \text{Bernoulli}(\theta) \\
+    \theta = logit^{-1}(\lambda_{i,s} - \lambda_{j,s} + \beta(X_i - X_j) \\
+\end{aligned}
+\]</span></p>
+<p>where <span class="math inline">\(\beta\)</span> is a vector indicating the direction and magnitude of the effect of a given covariate and <span class="math inline">\(X\)</span> is a design matrix containing columns of the covariates and the rows corresponding to the recorded data of the covariate.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true" href="">Structure of the Data</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false" href=""><code>PyMC</code></a></li></ul>
+<div class="tab-content">
+<div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 3%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 27%">
+<col style="width: 27%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">row</th>
+<th style="text-align: center;">y</th>
+<th style="text-align: center;">Competitor 1</th>
+<th style="text-align: center;">Competitor 2</th>
+<th style="text-align: center;">Competitor 1 Revenue</th>
+<th style="text-align: center;">Competitor 2 Revenue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">10,000</td>
+<td style="text-align: center;">1,000</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">10,000</td>
+<td style="text-align: center;">1,000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">1,000</td>
+<td style="text-align: center;">10,000</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">1,000</td>
+<td style="text-align: center;">10,000</td>
+</tr>
+</tbody>
+</table>
+<p>Competitor 1 is the competitor with the home-field advantage.</p>
+<p><span class="math inline">\(y = 0\)</span> if competitor 1 loses and <span class="math inline">\(y = 1\)</span> if competitor 1 wins.</p>
+<p>Competitor A wins twice (rows 2 and 3) and Competitor B wins twice (rows 1 and 4).</p>
+</div>
+<div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pymc <span class="im">as</span> pm</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Assuming that df is a pandas DataFrame.</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>competitor_1 <span class="op">=</span> df[<span class="st">"competitor_1"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>competitor_2 <span class="op">=</span> df[<span class="st">"competitor_2"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> pm.Model() <span class="im">as</span> bt:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data.</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    _y_obs <span class="op">=</span> pm.Data(<span class="st">"y_obs"</span>, df[<span class="st">"y"</span>], dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    _competitor_1 <span class="op">=</span> pm.Data(<span class="st">"competitor_1"</span>, competitor_1, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    _competitor_2 <span class="op">=</span> pm.Data(<span class="st">"competitor_2"</span>, competitor_2, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    _x_obs <span class="op">=</span> pm.Data(</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"x_obs"</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        (</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>            df[<span class="st">"competitor_1_revenue"</span>]</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="op">-</span> df[<span class="st">"competitor_2_revenue"</span>]</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        ).to_numpy(),</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        dims<span class="op">=</span><span class="st">"row"</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Instantiate parameters and define priors.</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    _alpha <span class="op">=</span> pm.HalfNormal(<span class="st">"alpha"</span>, sigma<span class="op">=</span><span class="dv">1</span>, shape<span class="op">=</span><span class="dv">2</span>) <span class="co"># latent ability of competitors</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    _beta <span class="op">=</span> pm.Normal(<span class="st">"beta"</span>, mu<span class="op">=</span><span class="dv">0</span>, sigma<span class="op">=</span><span class="dv">10</span>) <span class="co"># Competitor 1 revenue effect</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log of ability with sum-to-zero constraint</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    _lambda_unconstrained <span class="op">=</span> pm.math.log(_alpha)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    _lambda <span class="op">=</span> _lambda_unconstrained <span class="op">-</span> pm.math.mean(_lambda_unconstrained)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data-generating process.</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    _theta <span class="op">=</span> pm.math.invlogit(_lambda[_competitor_1] <span class="op">-</span> _lambda[_competitor_2] <span class="op">+</span> _beta <span class="op">*</span> _x_obs)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    _y <span class="op">=</span> pm.Bernoulli(<span class="st">"y"</span>, _theta, observed <span class="op">=</span> _y_obs)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit the model.</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    bt_idata <span class="op">=</span> pm.sample(draws<span class="op">=</span><span class="dv">2_000</span>, warmup<span class="op">=</span><span class="dv">2_000</span>, seed<span class="op">=</span><span class="dv">42</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="a-dyadic-or-pairing-specific-covariate" class="level2">
+<h2 class="anchored" data-anchor-id="a-dyadic-or-pairing-specific-covariate">A dyadic or pairing-specific covariate</h2>
+<p>Under these scenarios, the Bradley-Terry parameterization can be expanded to:</p>
+<p><span class="math display">\[
+\begin{aligned}
+    y_{i, j} \sim \text{Bernoulli}(\theta) \\
+    \theta = logit^{-1}(\lambda_{i,s} - \lambda_{j,s}) + \beta X \\
+    \lambda_{i,s} = \log(\alpha_i) \\
+    \lambda_{j,s} = log(\alpha_j) \\
+\end{aligned}
+\]</span></p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href="">Structure of the Data</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href=""><code>PyMC</code></a></li></ul>
+<div class="tab-content">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 4%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 48%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">row</th>
+<th style="text-align: center;">y</th>
+<th style="text-align: center;">Competitor 1</th>
+<th style="text-align: center;">Competitor 2</th>
+<th style="text-align: center;">Travel distance differential</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">750</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">1,000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">500</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">2,000</td>
+</tr>
+</tbody>
+</table>
+<p>Competitor 1 is the competitor with the home-field advantage.</p>
+<p><span class="math inline">\(y = 0\)</span> if competitor 1 loses and <span class="math inline">\(y = 1\)</span> if competitor 1 wins.</p>
+<p>Competitor A wins twice (rows 2 and 3) and Competitor B wins twice (rows 1 and 4).</p>
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pymc <span class="im">as</span> pm</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Assuming that df is a pandas DataFrame.</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>competitor_1 <span class="op">=</span> df[<span class="st">"competitor_1"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>competitor_2 <span class="op">=</span> df[<span class="st">"competitor_2"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> pm.Model() <span class="im">as</span> bt:</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data.</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    _y_obs <span class="op">=</span> pm.Data(<span class="st">"y_obs"</span>, df[<span class="st">"y"</span>], dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    _competitor_1 <span class="op">=</span> pm.Data(<span class="st">"competitor_1"</span>, competitor_1, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    _competitor_2 <span class="op">=</span> pm.Data(<span class="st">"competitor_2"</span>, competitor_2, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    _x_obs <span class="op">=</span> pm.Data(<span class="st">"x_obs"</span>, df[<span class="st">"travel_distance_differential"</span>], dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Instantiate parameters and define priors.</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    _alpha <span class="op">=</span> pm.HalfNormal(<span class="st">"alpha"</span>, sigma<span class="op">=</span><span class="dv">1</span>, shape<span class="op">=</span><span class="dv">2</span>) <span class="co"># latent ability of competitors</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    _beta <span class="op">=</span> pm.Normal(<span class="st">"beta"</span>, mu<span class="op">=</span><span class="dv">0</span>, sigma<span class="op">=</span><span class="dv">5</span>) <span class="co">#dyadic effect</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log of ability with sum-to-zero constraint</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    _lambda_unconstrained <span class="op">=</span> pm.math.log(_alpha)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    _lambda <span class="op">=</span> _lambda_unconstrained <span class="op">-</span> pm.math.mean(_lambda_unconstrained)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data-generating process.</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    _theta <span class="op">=</span> pm.math.invlogit(_lambda[_competitor_1] <span class="op">-</span> _lambda[_competitor_2] <span class="op">+</span> _beta <span class="op">*</span> _x_obs)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    _y <span class="op">=</span> pm.Bernoulli(<span class="st">"y"</span>, _theta, observed <span class="op">=</span> _y_obs)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit the model.</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    bt_idata <span class="op">=</span> pm.sample(draws<span class="op">=</span><span class="dv">2_000</span>, warmup<span class="op">=</span><span class="dv">2_000</span>, seed<span class="op">=</span><span class="dv">42</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="paired-comparison-with-consideration-of-magnitude-of-win" class="level1">
+<h1>Paired Comparison with consideration of magnitude of win</h1>
+<p>If a competitor ties with their opponent, the variants of the paired comparison models above cannot handle such cases. Additionally, if there are measures of how much greater the win of <span class="math inline">\(i\)</span> over <span class="math inline">\(j\)</span> or <span class="math inline">\(j\)</span> over <span class="math inline">\(i\)</span> is for a given match-up, accounting for those situations can aid in more precision on the estimate of <span class="math inline">\(\alpha\)</span>. To account for such situations, the paired comparison variants above can be adjusted by changing the <span class="math inline">\(\text{Bernoulli}\)</span> kernel with an <span class="math inline">\(\text{OrderedLogistic}\)</span> kernel. For example,</p>
+<p><span class="math display">\[
+\begin{aligned}
+    y \sim \text{OrderedLogistic}(\eta, c) \\
+    \eta = \lambda_i - \lambda_j \\
+    \lambda_i, \lambda_j \sim \mathcal{HN}(.,.) \\
+    c \sim \text{CumSum}(\mathcal{HN}(.,.) \\
+\end{aligned}
+\]</span></p>
+<p>where <span class="math inline">\(c\)</span> is an ordered parameter that captures the cutpoints between outcome categories.</p>
+<p>Alternatively, if one’s outcomes are instead</p>
+<p><span class="math display">\[
+y \in \{i \text{ beats } j, i \text{ ties } j, j \text{ beats } i\},
+\]</span></p>
+<p>then the <span class="math inline">\(\text{MultiNomialLogistic}\)</span> kernel may be used instead of the <span class="math inline">\(\text{OrderedLogistic}\)</span>.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true" href="">Structure of the Data</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false" href=""><code>PyMC</code></a></li></ul>
+<div class="tab-content">
+<div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">row</th>
+<th style="text-align: center;">y</th>
+<th style="text-align: center;">Competitor 1</th>
+<th style="text-align: center;">Competitor 2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">A</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math inline">\(y = 0\)</span> if competitor 1 loses, <span class="math inline">\(y = 1\)</span> is a tie and <span class="math inline">\(y=2\)</span> if Competitor 1 wins.</p>
+<p>If wanting to model for the magnitude of victory, this can be expanded with more categories.</p>
+<p>For example:</p>
+<p><span class="math display">\[
+y \in \{0, 1, 2, 3, 4, 5, 6\}
+\]</span></p>
+<p>Competitor A wins twice (rows 2 and 3) and Competitor B wins twice (rows 1 and 4).</p>
+</div>
+<div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pymc <span class="im">as</span> pm</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Assuming that df is a pandas DataFrame.</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>competitor_1 <span class="op">=</span> df[<span class="st">"competitor_1"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>competitor_2 <span class="op">=</span> df[<span class="st">"competitor_2"</span>].<span class="bu">map</span>({<span class="st">"A"</span>: <span class="dv">0</span>, <span class="st">"B"</span>: <span class="dv">1</span>})</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> pm.Model() <span class="im">as</span> bt:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data.</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    _y_obs <span class="op">=</span> pm.Data(<span class="st">"y_obs"</span>, df[<span class="st">"y"</span>], dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    _competitor_1 <span class="op">=</span> pm.Data(<span class="st">"competitor_1"</span>, competitor_1, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    _competitor_2 <span class="op">=</span> pm.Data(<span class="st">"competitor_2"</span>, competitor_2, dims<span class="op">=</span><span class="st">"row"</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Instantiate parameters and define priors.</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    _alpha <span class="op">=</span> pm.HalfNormal(<span class="st">"alpha"</span>, sigma<span class="op">=</span><span class="dv">1</span>, shape<span class="op">=</span><span class="dv">2</span>) <span class="co"># latent ability of competitors</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Log of ability with sum-to-zero constraint</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    _lambda_unconstrained <span class="op">=</span> pm.math.log(_alpha)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    _lambda <span class="op">=</span> _lambda_unconstrained <span class="op">-</span> pm.math.mean(_lambda_unconstrained)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the data-generating process.</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    _eta <span class="op">=</span> _lambda[_competitor_1] <span class="op">-</span> _lambda[_competitor_2]</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    _cutpoints <span class="op">=</span> pm.Normal(<span class="st">"cutpoints"</span>, mu<span class="op">=</span>[<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>], sigma<span class="op">=</span><span class="dv">1</span>, shape<span class="op">=</span><span class="dv">2</span>, transform<span class="op">=</span>pm.distributions.transforms.ordered)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    _y <span class="op">=</span> pm.OrderedLogistic(<span class="st">"y"</span>, eta<span class="op">=</span>_eta, cutpoints<span class="op">=</span>_cutpoints, observed<span class="op">=</span>_y_obs)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit the model.</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    bt_idata <span class="op">=</span> pm.sample(draws<span class="op">=</span><span class="dv">2_000</span>, warmup<span class="op">=</span><span class="dv">2_000</span>, seed<span class="op">=</span><span class="dv">42</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "DamonCharlesRoberts/blog";
+    script.dataset.repoId = "";
+    script.dataset.category = "General";
+    script.dataset.categoryId = "";
+    script.dataset.mapping = "title";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p><span class="faux-block">{{&lt; fa brands creative-commons &gt;}} 2025 Damon Charles Roberts</span> <span class="faux-block"><br>All content licensed under {{&lt; fa brands creative-commons &gt;}} <a href="https://github.com/DamonCharlesRoberts/blog?tab=License-1-ov-file">NON-AI CC0 1.0 Universal</a></span></p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
