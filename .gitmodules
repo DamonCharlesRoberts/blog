@@ -10,3 +10,6 @@
 [submodule "posts/jokic_tracker"]
 	path = posts/jokic_tracker
 	url = https://github.com/damoncharlesroberts/jokic_tracker.git
+[submodule "posts/paired_comparisons"]
+	path = posts/paired_comparisons
+	url = https://github.com/damoncharlesroberts/paired_comparisons.git
